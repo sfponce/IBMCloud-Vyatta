@@ -1,0 +1,440 @@
+protocols {
+	static {
+		route 0.0.0.0/0 {
+			next-hop 81.95.153.129
+		}
+		route 10.0.0.0/8 {
+			next-hop 10.104.241.65
+		}
+		route 10.72.58.64/26 {
+			next-hop 192.168.10.2
+		}
+		route 161.26.0.0/16 {
+			next-hop 10.104.241.65
+		}
+		route6 ::/0 {
+			next-hop 2a03:8180:1002:01ea:0000:0000:0000:0001
+		}
+	}
+}
+resources {
+	group {
+		address-group ibmprivate {
+			address 10.2.200.0/23
+			address 10.3.220.0/24
+			address 10.3.160.0/20
+			address 10.201.0.0/20
+			address 10.0.64.0/19
+			address 10.2.64.0/20
+			address 10.3.128.0/20
+		}
+	}
+}
+security {
+	firewall {
+		all-ping enable
+		broadcast-ping disable
+		global-state-policy {
+			icmp
+			tcp
+			udp
+		}
+		name APP-TO-INSIDE {
+			default-log
+			rule 100 {
+				action accept
+				destination {
+					address ibmprivate
+				}
+				protocol tcp
+			}
+			rule 110 {
+				action accept
+				destination {
+					address ibmprivate
+				}
+				protocol udp
+			}
+			rule 200 {
+				action accept
+				destination {
+					address ibmprivate
+				}
+				icmp {
+					type 8
+				}
+				log
+				protocol icmp
+			}
+		}
+		name APP-TO-OUTSIDE {
+			default-action drop
+			description "App traffic to the internet"
+			rule 100 {
+				action accept
+			}
+		}
+		name APP-TO-TUNNEL {
+			default-action accept
+			default-log
+		}
+		name APP-TUNNEL {
+			default-action accept
+			default-log
+		}
+		name CPP {
+			rule 10 {
+				action accept
+				description RIP
+				destination {
+					port 520
+				}
+				protocol udp
+			}
+			rule 20 {
+				action accept
+				description RIPng
+				destination {
+					port 521
+				}
+				protocol udp
+			}
+			rule 30 {
+				action accept
+				description PIM
+				protocol pim
+			}
+			rule 40 {
+				action accept
+				description IGMP
+				protocol igmp
+			}
+			rule 50 {
+				action accept
+				description MLD
+				protocol 58
+			}
+			rule 60 {
+				action accept
+				description MSDP
+				destination {
+					port 639
+				}
+				protocol tcp
+			}
+			rule 70 {
+				action accept
+				description BGP-source
+				protocol tcp
+				source {
+					port 179
+				}
+			}
+			rule 80 {
+				action accept
+				description BGP-destination
+				destination {
+					port 179
+				}
+				protocol tcp
+			}
+			rule 90 {
+				action accept
+				description "BFD Singlehop Packets"
+				destination {
+					port 3784
+				}
+				protocol udp
+			}
+			rule 100 {
+				action accept
+				description "BFD Multi-hop Packets"
+				destination {
+					port 4784
+				}
+				protocol udp
+			}
+			rule 110 {
+				action accept
+				description OSPFv2
+				destination {
+					address 0.0.0.0/0
+				}
+				protocol ospf
+			}
+			rule 120 {
+				action accept
+				description OSPFv3
+				destination {
+					address ::/0
+				}
+				protocol ospf
+			}
+			rule 130 {
+				action accept
+				description NDP-router-solicitation
+				icmpv6 {
+					name router-solicitation
+				}
+			}
+			rule 140 {
+				action accept
+				description NDP-router-advert
+				icmpv6 {
+					name router-advertisement
+				}
+			}
+			rule 150 {
+				action accept
+				description NDP-neighbor-solicitation
+				icmpv6 {
+					name neighbor-solicitation
+				}
+			}
+			rule 160 {
+				action accept
+				description NDP-neighbor-advert
+				icmpv6 {
+					name neighbor-advertisement
+				}
+			}
+			rule 170 {
+				action accept
+				description NDP-redirect
+				icmpv6 {
+					name redirect
+				}
+			}
+			rule 180 {
+				action accept
+				description IKE
+				destination {
+					port 500
+				}
+				protocol udp
+			}
+			rule 190 {
+				action accept
+				description "IKE NAT Traversal"
+				destination {
+					port 4500
+				}
+				protocol udp
+			}
+			rule 200 {
+				action accept
+				description AH
+				protocol ah
+			}
+			rule 210 {
+				action accept
+				description ESP
+				protocol esp
+			}
+			rule 220 {
+				action accept
+				description "VRRP IPv4"
+				destination {
+					address 224.0.0.18
+				}
+				protocol vrrp
+			}
+			rule 230 {
+				action accept
+				description "VRRP IPv6"
+				destination {
+					address ff02::12
+				}
+				protocol vrrp
+			}
+			rule 240 {
+				action drop
+				description "IPv4 Fragments"
+				destination {
+					address 0.0.0.0/0
+				}
+				fragment
+			}
+			rule 250 {
+				action drop
+				description "IPv6 Fragments"
+				destination {
+					address ::/0
+				}
+				fragment
+			}
+			rule 900 {
+				action drop
+				destination {
+					address 81.95.153.0/24
+					port 22
+				}
+				protocol tcp
+			}
+			rule 1000 {
+				action accept
+				description "Default Rate limit"
+				police {
+					ratelimit 100kpps
+					then {
+						action drop
+					}
+				}
+			}
+		}
+		name INSIDE-TO-APP {
+			default-action drop
+			default-log
+			rule 100 {
+				action accept
+				protocol tcp
+				source {
+					address ibmprivate
+				}
+			}
+			rule 110 {
+				action accept
+				protocol udp
+				source {
+					address ibmprivate
+				}
+			}
+			rule 200 {
+				action accept
+				icmp {
+					type 8
+				}
+				log
+				protocol icmp
+				source {
+					address ibmprivate
+				}
+			}
+		}
+		name OUTSIDE-TO-APP {
+			default-action accept
+			default-log
+			description "App traffic from the internet"
+		}
+		name TUNNEL-TO-APP {
+			default-action accept
+			default-log
+		}
+	}
+	vpn {
+		ipsec {
+			esp-group AWS {
+				lifetime 1800
+				mode tunnel
+				pfs enable
+				proposal 1 {
+					encryption aes128
+					hash sha1
+				}
+			}
+			ike-group AWS {
+				lifetime 3600
+				proposal 1 {
+					dh-group 2
+					encryption aes128
+					hash sha1
+				}
+			}
+			site-to-site {
+				peer 158.176.81.163 {
+					authentication {
+						mode pre-shared-secret
+						pre-shared-secret GJVU1O53saxvrZro2waNDevtBr7VNuBw
+					}
+					connection-type initiate
+					default-esp-group AWS
+					ike-group AWS
+					local-address 81.95.153.131
+					tunnel 1 {
+						protocol gre
+					}
+				}
+			}
+		}
+	}
+	zone-policy {
+		zone APP {
+			default-action drop
+			description "Application network"
+			interface dp0bond0.1186
+			to INSIDE {
+				firewall APP-TO-INSIDE
+			}
+			to OUTSIDE {
+				firewall APP-TO-OUTSIDE
+			}
+			to TUNNEL {
+				firewall APP-TO-TUNNEL
+			}
+		}
+		zone INSIDE {
+			default-action drop
+			description "IBM Internal network"
+			interface dp0bond0
+			to APP {
+				firewall INSIDE-TO-APP
+			}
+		}
+		zone OUTSIDE {
+			default-action drop
+			description ‘External’
+			interface dp0bond1
+			to APP {
+				firewall OUTSIDE-TO-APP
+			}
+		}
+		zone TUNNEL {
+			default-action accept
+			interface tun0
+			to APP {
+				firewall TUNNEL-TO-APP
+			}
+		}
+	}
+}
+service {
+	nat {
+		source {
+			rule 20 {
+				destination {
+					address 10.72.58.64/26
+				}
+				exclude
+				log
+				outbound-interface dp0bond1
+				source {
+					address 10.104.17.0/26
+				}
+			}
+			rule 30 {
+				destination {
+					address 10.104.17.0/26
+				}
+				exclude
+				log
+				outbound-interface dp0bond1
+				source {
+					address 10.72.58.64/26
+				}
+			}
+			rule 1000 {
+				description "pass traffic to the internet"
+				outbound-interface dp0bond1
+				source {
+					address 10.104.17.0/26
+				}
+				translation {
+					address masquerade
+				}
+			}
+		}
+	}
+	ssh {
+		port 22
+	}
+}
